@@ -1,0 +1,21 @@
+PODS:
+  - Kingfisher (6.0.1)
+
+DEPENDENCIES:
+  - Kingfisher (from `https://github.com/onevcat/Kingfisher`)
+
+EXTERNAL SOURCES:
+  Kingfisher:
+    :git: https://github.com/onevcat/Kingfisher
+
+CHECKOUT OPTIONS:
+  Kingfisher:
+    :commit: 88f9627aa5d1ab2c181608d12da4e5c6571f7560
+    :git: https://github.com/onevcat/Kingfisher
+
+SPEC CHECKSUMS:
+  Kingfisher: adde87a4f74f6a3845395769354efff593581740
+
+PODFILE CHECKSUM: bdb1f63cb46c5b8e701914523aa738bf81cef666
+
+COCOAPODS: 1.9.3
