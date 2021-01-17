@@ -1,0 +1,9 @@
+os:
+  - osx
+language: swift
+osx_image: xcode12.2
+env:
+  - PROJECT_NAME=lab_1
+script:
+  - xcodebuild build-for-testing -workspace SomeNews.xcworkspace -scheme SomeNews -sdk iphonesimulator -destination id=D4F26426-1E02-47A0-89BF-FA9C8D2A82E3
+  - xcodebuild test -workspace SomeNews.xcworkspace -scheme SomeNews -sdk iphonesimulator -destination id=D4F26426-1E02-47A0-89BF-FA9C8D2A82E3
