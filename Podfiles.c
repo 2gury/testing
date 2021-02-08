@@ -123,5 +123,4 @@ static void __exit process_scheduler_module_cleanup(void)
 module_init(process_scheduler_module_init);
 module_exit(process_scheduler_module_cleanup);
 
-/*Инициализация time_quantum*/
 module_param(time_quantum, int, 0);
