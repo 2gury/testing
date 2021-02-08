@@ -1,9 +1,3 @@
-/**
-	\file	:	process_set.c
-	\author	: 	Sreeram Sadasivam
-	\brief	:	Accessing a proc system file which set the process id
-				which can be later used for our custom scheduler.
-*/
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/errno.h>
