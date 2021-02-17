@@ -1,121 +1,165 @@
-#include <linux/module.h>
-#include <linux/init.h>
-#include <linux/errno.h>
-#include <linux/fs.h>
-#include <linux/time.h>
-#include <linux/proc_fs.h>
-#include <linux/kernel.h>
-#include <linux/list.h>
-#include <linux/slab.h>
-#include <linux/uaccess.h>
+#include "device_read.h"
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <xdo.h>
 
-#define BUFSIZE  100
+char mapping[16][10];
 
-static int irq=20;
-module_param(irq,int,0660);
-
-MODULE_AUTHOR("Timoin Anton");
-MODULE_DESCRIPTION("Process Setting Module");
-MODULE_LICENSE("GPL");
-
-#define PROC_CONFIG_FILE_NAME	"process_sched_add"
-#define BASE_10 		10
-
-enum process_state {
-	
-	eCreated		=	0, 
-	eRunning		=	1, 
-	eWaiting		=	2, 
-	eBlocked		=	3,
-	eTerminated		=	4 
-};
-
-enum execution {
-
-	eExecFailed 	= 	-1, 
-	eExecSuccess 	=	 0  
-};
-
-static struct proc_dir_entry *proc_sched_add_file_entry;
-
-extern int add_process_to_queue(int pid);
-extern int remove_process_from_queue(int pid);
-extern int print_process_queue(void);
-extern int get_first_process_in_queue(void);
-extern int remove_terminated_processes_from_queue(void);
-extern int change_process_state_in_queue(int pid, int changeState);
-
-static ssize_t process_sched_add_module_read(struct file *file, char *buf, size_t count, loff_t *ppos)
-{
-	
-	printk(KERN_INFO "Process Scheduler Add Module read.\n");
-	printk(KERN_INFO "Next Executable PID in the list if RR Scheduling: %d\n", get_first_process_in_queue());
-	return 0;
+int generate_mapping() {
+	char line[20];
+	char * key;
+	int i;
+	FILE * config = fopen("../key_map.config", "r");
+	if(config == NULL) {
+		fprintf(stderr, "Configuration file missing.");
+		return(-1);
+	}
+	for(i = 0; i < 16; i++){
+		fscanf(config, "%s", line);
+		key = strtok(line, ":");
+		key = strtok(NULL, ":");
+		strcpy(mapping[i], key);
+	}
+	fclose(config);
+	return(0);
 }
 
-static ssize_t process_sched_add_module_write(struct file *file, const char *ubuf, size_t count, loff_t *ppos)
-{
-	int num,c,i, ret;
-	char buf[BUFSIZE];
-	if(*ppos > 0 || count > BUFSIZE)
-		return -EFAULT;
-	if(copy_from_user(buf, ubuf, count))
-		return -EFAULT;
-	num = sscanf(buf,"%d",&i);
-	if(num != 1)
-		return -EFAULT;
-	irq = i; 
-	c = strlen(buf);
-	*ppos = c;
+void send_key(xdo_t * x, char key[10]) {
+	if(strcmp("mouse_u", key) == 0) {
+		xdo_mouse_down(x, CURRENTWINDOW, 1);
+		xdo_mouse_up(x, CURRENTWINDOW, 1);
+		xdo_move_mouse_relative(x, 0, -10);
+	} else if (strcmp("mouse_r", key) == 0) {
+		xdo_mouse_down(x, CURRENTWINDOW, 1);
+		xdo_mouse_up(x, CURRENTWINDOW, 1);
+		xdo_move_mouse_relative(x, 10, 0);
+	} else if (strcmp("mouse_d", key) == 0) {
+		xdo_mouse_down(x, CURRENTWINDOW, 1);
+		xdo_mouse_up(x, CURRENTWINDOW, 1);
+		xdo_move_mouse_relative(x, 0, 10);
+	} else if (strcmp("mouse_l", key) == 0) {
+		xdo_mouse_down(x, CURRENTWINDOW, 1);
+		xdo_mouse_up(x, CURRENTWINDOW, 1);
+		xdo_move_mouse_relative(x, -10, 0);
+	} else {
 
-	ret = add_process_to_queue(i);
-	if(ret != eExecSuccess) {
-		printk(KERN_ALERT "Process Set ERROR:add_process_to_queue");
-		return -ENOMEM;
+		xdo_send_keysequence_window(x, CURRENTWINDOW, key, 0);
+	}
+}
+
+void press_key(int face_buttons, int misc_buttons, xdo_t * x) {
+
+	switch (misc_buttons) {
+		case L1_BTN: 
+			send_key(x, mapping[8]);
+			break;
+		case R1_BTN: 
+			send_key(x, mapping[9]);
+			break;
+		case L2_BTN:
+			send_key(x, mapping[10]);
+			break;
+		case R2_BTN:
+			send_key(x, mapping[11]);
+			break;
+		case SHARE_BTN:
+			send_key(x, mapping[12]);
+			break;
+		case OPTIONS_BTN:
+			send_key(x, mapping[13]);
+			break;
+		case L3_BTN:
+			send_key(x, mapping[14]);
+			break;
+		case R3_BTN:
+			send_key(x, mapping[15]);
+			break;
 	}
 
-	return c;
-}
-
-static int process_sched_add_module_open(struct inode * inode, struct file * file)
-{
-	printk(KERN_INFO "Process Scheduler Add Module open.\n");
-	return 0;
-}
-
-static int process_sched_add_module_release(struct inode * inode, struct file * file)
-{
-	printk(KERN_INFO "Process Scheduler Add Module released.\n");
-	return 0;
-}
-
-static struct file_operations process_sched_add_module_fops = {
-	.owner =	THIS_MODULE,
-	.read =		process_sched_add_module_read,
-	.write =	process_sched_add_module_write,
-	.open =		process_sched_add_module_open,
-	.release =	process_sched_add_module_release,
-};
-
-static int __init process_sched_add_module_init(void)
-{
-	printk(KERN_INFO "Process Set moduleloaded.\n");
-	
-	proc_sched_add_file_entry = proc_create(PROC_CONFIG_FILE_NAME,0777,NULL,&process_sched_add_module_fops);
-	if(proc_sched_add_file_entry == NULL) {
-		printk(KERN_ALERT "Error: Initialize /proc/%s\n",PROC_CONFIG_FILE_NAME);
-		return -ENOMEM;
+	switch (face_buttons) {
+		case UP_BTN: 
+			send_key(x, mapping[0]);
+			break;
+		case RIGHT_BTN: 
+			send_key(x, mapping[1]);
+			break;
+		case DOWN_BTN:
+			send_key(x, mapping[2]);
+			break;
+		case LEFT_BTN:
+			send_key(x, mapping[3]);
+			break;
+		case SQUARE_BTN:
+			send_key(x, mapping[4]);
+			break;
+		case X_BTN:
+			send_key(x, mapping[5]);
+			break;
+		case CIRCLE_BTN:
+			send_key(x, mapping[6]);
+			break;
+		case TRIANGLE_BTN:
+			send_key(x, mapping[7]);
+			break;
 	}
-	
-	return 0;
 }
 
-static void __exit process_sched_add_module_cleanup(void)
-{
-	
-	printk(KERN_INFO "Process Set module unloaded.\n");
-	proc_remove(proc_sched_add_file_entry);
+int main (void) {
+	char buf[100];
+	int fd;
+	xdo_t * x = xdo_new(NULL);
+	if(generate_mapping() != 0) {
+		fprintf(stderr, "Error loading key configuration. Quitting...");
+		return(-1);
+	}
+	while(1) {
+		fd = open("/dev/ds4-device", O_RDONLY);
+		read(fd, &buf, 7);
+
+		if(buf[5] != 8 || buf[6] != 0) {
+			press_key(buf[5], buf[6], x);
+			printf("\t");
+
+			while(buf[5] != 8 || buf[6] != 0){
+				fd = open("/dev/ds4-device", O_RDONLY);
+				read(fd, &buf, 7);
+				close(fd);
+
+			}
+			
+		}
+		
+		
+		close(fd);
+		
+	}
+	xdo_free(x);
+	return(0);
 }
 
-module_init(process_sched_add_module_init);
-module_exit(process_sched_add_module_cleanup);
+
+
+#define UP_BTN	 	0x0
+#define RIGHT_BTN 	0x2
+#define DOWN_BTN	0x4
+#define LEFT_BTN 	0x6
+#define SQUARE_BTN	0x18
+#define X_BTN	 	0x28
+#define CIRCLE_BTN	0x48
+#define TRIANGLE_BTN   -0x78
+
+#define L1_BTN	 	0x1
+#define R1_BTN 		0x2
+#define L2_BTN		0x4
+#define R2_BTN 		0x08
+#define SHARE_BTN	0x10
+#define OPTIONS_BTN	0x20
+#define L3_BTN		0x40
+#define R3_BTN	       -0x80
+
+
