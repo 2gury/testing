@@ -1,3 +1,41 @@
+DPAD_UP:mouse_u 
+DPAD_RIGHT:mouse_r 
+DPAD_DOWN:mouse_d 
+DPAD_LEFT:mouse_l 
+SQUARE:s 
+X:Return 
+CIRCLE:c 
+TRIANGLE:t 
+L1:1 
+R1:2 
+L2:Up
+R2:Down
+SHARE:5 
+OPTIONS:6 
+L3:7 
+R3:8
+
+#define UP_BTN	 	0x0
+#define RIGHT_BTN 	0x2
+#define DOWN_BTN	0x4
+#define LEFT_BTN 	0x6
+#define SQUARE_BTN	0x18
+#define X_BTN	 	0x28
+#define CIRCLE_BTN	0x48
+#define TRIANGLE_BTN    0x78
+
+#define L1_BTN	 	0x1
+#define R1_BTN 		0x2
+#define L2_BTN		0x4
+#define R2_BTN 		0x08
+#define SHARE_BTN	0x10
+#define OPTIONS_BTN	0x20
+#define L3_BTN		0x40
+#define R3_BTN	        0x80
+
+
+
+
 #include <linux/module.h>
 #include <linux/init.h>
 #include <linux/errno.h>
