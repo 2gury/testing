@@ -3,10 +3,13 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <signal.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
+#include <syslog.h>
 #include <xdo.h>
+
 
 char mapping[16][10];
 
@@ -14,7 +17,7 @@ int generate_mapping() {
 	char line[20];
 	char * key;
 	int i;
-	FILE * config = fopen("../key_map.config", "r");
+	FILE * config = fopen("/home/parallels/Desktop/ds4/key_map.config", "r");
 	if(config == NULL) {
 		fprintf(stderr, "Configuration file missing.");
 		return(-1);
@@ -110,6 +113,35 @@ void press_key(int face_buttons, int misc_buttons, xdo_t * x) {
 }
 
 int main (void) {
+	pid_t process_id = 0;
+	pid_t sid = 0;
+
+	process_id = fork();
+
+	if (process_id < 0)
+	{
+		printf("fork failed!\n");
+		exit(1);
+	}
+
+	if (process_id > 0)
+	{
+		exit(0);
+	}
+
+	umask(0);
+	sid = setsid();
+	if(sid < 0)
+	{
+		exit(1);
+	}
+
+	chdir("/");
+
+	close(STDIN_FILENO);
+	close(STDOUT_FILENO);
+	close(STDERR_FILENO);
+	
 	char buf[100];
 	int fd;
 	xdo_t * x = xdo_new(NULL);
@@ -129,37 +161,12 @@ int main (void) {
 				fd = open("/dev/ds4-device", O_RDONLY);
 				read(fd, &buf, 7);
 				close(fd);
-
 			}
-			
 		}
-		
-		
-		close(fd);
-		
+		close(fd);	
 	}
 	xdo_free(x);
-	return(0);
+	return EXIT_SUCCESS;
 }
-
-
-
-#define UP_BTN	 	0x0
-#define RIGHT_BTN 	0x2
-#define DOWN_BTN	0x4
-#define LEFT_BTN 	0x6
-#define SQUARE_BTN	0x18
-#define X_BTN	 	0x28
-#define CIRCLE_BTN	0x48
-#define TRIANGLE_BTN   -0x78
-
-#define L1_BTN	 	0x1
-#define R1_BTN 		0x2
-#define L2_BTN		0x4
-#define R2_BTN 		0x08
-#define SHARE_BTN	0x10
-#define OPTIONS_BTN	0x20
-#define L3_BTN		0x40
-#define R3_BTN	       -0x80
 
 
